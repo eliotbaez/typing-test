@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 import curses
 import time
+import sys
 from curses import wrapper
 
 def main (stdscr):
@@ -14,7 +15,8 @@ def main (stdscr):
     curses.init_pair (3, curses.COLOR_BLACK, curses.COLOR_WHITE)
 
     # Initialize sample string
-    string = "The recent emergence of several competitive typing websites has allowed several fast typists on computer keyboards to emerge along with new records, though these are unverifiable for the most part. Two of the most notable online records that are considered genuine are 251.21 wpm on an English text on typingzone.com by Brazilian Guilherme Sandrini (equivalent to 301.45 wpm using the traditional definition for words per minute since this site defines a word as six characters rather than five) and 256 wpm (a record caught on video) on TypeRacer by American Sean Wrona, the inaugural Ultimate Typing Championship winner, which was considered the highest ever legitimate score ever set on the site, until Wrona claimed it has been surpassed."
+    with open("./text/01.txt", "r") as f:
+        string = f.read()
     stdscr.addstr(1, 0, string)
     
     # Variables for tabulation
@@ -23,7 +25,6 @@ def main (stdscr):
     error_count = 0
     chars_typed = 0
     cancelled = False
-    error_comp = 0
 
     stdscr.addstr(0, 0, "%-35s 5:00" % "Start typing to start the timer.")
     stdscr.chgat(0, 0, -1, curses.A_REVERSE)
@@ -58,15 +59,17 @@ def main (stdscr):
             # Character is correct
             if chr(c) == string[i]:
                 stdscr.addstr(chr(c), curses.color_pair(1))
-                i += 1
                 chars_typed += 1
                 if i in error_list:
-                    error_comp -= 1
+                    error_list.remove(i)
+                i += 1
                 stdscr.refresh()
             # Not correct, but ASCII printable
             elif 31 < c and c < 127:
                 curses.beep()
                 stdscr.addstr(chr(c), curses.color_pair(2))
+                if i in error_list:
+                    error_list.remove(i)
                 error_list.append(i)
                 i += 1
                 chars_typed += 1
@@ -75,8 +78,10 @@ def main (stdscr):
             elif c == curses.KEY_ENTER or c == 10 or c == 13:
                 curses.beep()
                 stdscr.addstr(" ", curses.color_pair(2))
+                if i in error_list:
+                    error_list.remove(i)
                 error_list.append(i)
-                i += 1
+                i  += 1
                 chars_typed += 1
                 error_count += 1
                 stdscr.refresh()
@@ -115,12 +120,12 @@ def main (stdscr):
     else:
         stdscr.addstr(0, 0, "%-35s" % "Typing test ended!")
         stdscr.chgat(0, 0, -1, curses.color_pair(2) | curses.A_BOLD)
-    stdscr.chgat(0, 35, 5, curses.color_pair(2) | curses.A_BOLD)
+    stdscr.chgat(0, 35, 5, curses.color_pair(2) | curses.A_BOLD | curses.A_BLINK)
     
     # Display statistics
-    uncorrected = len(set(error_list)) + error_comp
+    uncorrected = len(error_list)
     stdscr.addstr(1, 0, "%-34s" % " ", curses.color_pair(3))
-    stdscr.addstr(2, 0, "%-34s" % "    TYPING STATISTICS", curses.color_pair(3))
+    stdscr.addstr(2, 0, "%-34s" % "        TYPING STATISTICS", curses.color_pair(3))
     stdscr.addstr(3, 0, "  Gross characters typed:%7d  " % chars_typed, curses.color_pair(3))
     stdscr.addstr(4, 0, "  Net characters typed:  %7d  " % i, curses.color_pair(3))
     stdscr.addstr(5, 0, "  Total errors made:     %7d  " % error_count, curses.color_pair(3))
@@ -129,16 +134,20 @@ def main (stdscr):
     stdscr.addstr(8, 0, "%-34s" % " ", curses.color_pair(3))
     stdscr.addstr(9, 0, "  Gross typing speed:   %4d WPM  " % (12 * chars_typed / time_elapsed), curses.color_pair(3))
     stdscr.addstr(10, 0, "  Net typing speed:     %4d WPM  " % (60 * ((chars_typed / 5) - uncorrected) / time_elapsed), curses.color_pair(3))
+    if chars_typed == 0:
+        # Trick calculations into displaying 0
+        chars_typed = error_count = 1
     stdscr.addstr(11, 0, "  Accuracy:                %4d%%  " % round(100 * (chars_typed - error_count) / chars_typed), curses.color_pair(3))
     stdscr.addstr(12, 0, "%-34s" % " ", curses.color_pair(3))
-    stdscr.addstr(13, 0, "%-34s" % "  Press any key to exit...", curses.color_pair(3))
+    stdscr.addstr(13, 0, "%-34s" % "  Press Ctrl+X to exit...", curses.color_pair(3))
     stdscr.addstr(14, 0, "%-34s" % " ", curses.color_pair(3))
     curses.curs_set(False)
     stdscr.refresh()
 
 
     stdscr.nodelay(False)
-    stdscr.getkey()
+    while stdscr.getch() != ord('X') & 0x1f:
+        pass
     # done
 
 wrapper (main)
