@@ -81,8 +81,8 @@ def main (stdscr):
             continue
         # Input ready
         else:
-            # Character is ASCII printable
-            if 31 < c and c < 127:
+            # Character is ASCII printable or newline
+            if (31 < c and c < 127) or (c == curses.KEY_ENTER or c == 10 or c == 13):
                 if i in error_list:
                     error_list.remove(i)
                 # Character is correct
@@ -91,6 +91,9 @@ def main (stdscr):
                 # Not correct
                 else:
                     curses.beep()
+                    if c == curses.KEY_ENTER or c == 10 or c == 13:
+                        # Reassign as space character
+                        c = 32
                     stdscr.addstr(chr(c), curses.color_pair(2))
                     error_list.append(i)
                     error_count += 1
@@ -98,23 +101,7 @@ def main (stdscr):
                 chars_typed += 1
                 
                 stdscr.refresh()
-            # Newline character
-            elif c == curses.KEY_ENTER or c == 10 or c == 13:
-                if i in error_list:
-                    error_list.remove(i)
-                # Character is correct
-                if string[i] == '\n':
-                    stdscr.addstr('\n', curses.color_pair(1))
-                # Not correct
-                else:
-                    curses.beep()
-                    stdscr.addstr(" ", curses.color_pair(2))
-                    error_list.append(i)
-                    error_count += 1
-                i += 1
-                chars_typed += 1
-                
-                stdscr.refresh()
+
             # Other conditions
             elif c == curses.KEY_BACKSPACE or c == curses.KEY_LEFT:
                 if i > 0:
