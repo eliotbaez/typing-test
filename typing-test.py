@@ -69,7 +69,7 @@ def main (stdscr):
         time_remaining = 300 - time.time() + timer_start
         if time_remaining <= 0:
             break
-        yx = curses.getsyx()
+        yx = stdscr.getyx()
         stdscr.addstr(0, 35, "%2d:%02d" % (time_remaining // 60, time_remaining % 60), curses.A_REVERSE)
         stdscr.move(yx[0], yx[1])
         stdscr.refresh()
@@ -99,7 +99,37 @@ def main (stdscr):
                     error_count += 1
                 i += 1
                 chars_typed += 1
+                stdscr.refresh()
                 
+                # Scroll if at bottom of screen
+                yx = stdscr.getyx()
+                if (yx[0] > curses.LINES - 3):
+                    # Redraw screen
+                    # First shift buffer by 1 line
+                    j = 0
+                    while j < curses.COLS - 1:
+                        c = string[offset + j]
+                        j += 1
+                        if c == 10 or c == 13:
+                            break
+                    offset += j + 1
+
+                    # Then calculate buffer with new offset
+                    j = k = 0 # buffer index and string index
+                    buf = ""
+                    while j < bufsize:
+                        buf += string[k + offset]
+                        if string[k + offset] != '\n':
+                            j += 1
+                        else:
+                            j += curses.COLS - ((k + newline_comp) % curses.COLS)
+                            newline_comp += curses.COLS - ((k + newline_comp) % curses.COLS) - 1
+                        k += 1
+
+                    # Now write buffer to screen
+                    stdscr.addstr(1, 0, buf, curses.color_pair(1))
+                    stdscr.move(yx[0] - 1, yx[1])
+
                 stdscr.refresh()
 
             # Other conditions
@@ -107,7 +137,7 @@ def main (stdscr):
                 if i > 0:
                     i -= 1
 
-                yx = curses.getsyx()
+                yx = stdscr.getyx()
                 # Cursor is at first column
                 if yx[1] == 0:
                     if yx[0] > 1:
