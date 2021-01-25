@@ -1,23 +1,48 @@
 #!/usr/bin/python3
 import curses
 import time
-import sys
 from curses import wrapper
+import random
 
 def main (stdscr):
-    # Clear screen
     stdscr.clear()
-    
-    cols = curses.COLS 
 
     curses.init_pair (1, curses.COLOR_GREEN, curses.COLOR_BLACK)
     curses.init_pair (2, curses.COLOR_WHITE, curses.COLOR_RED)
     curses.init_pair (3, curses.COLOR_BLACK, curses.COLOR_WHITE)
 
+    
     # Initialize sample string
-    with open("./text/01.txt", "r") as f:
-        string = f.read()
-    stdscr.addstr(1, 0, string)
+    # The 10 text files are indexed 00-09
+    indexes_used = [None] * 10
+    i = 0
+    while i < 10:
+        n = random.randint(0, 9)
+        if n not in indexes_used:
+            indexes_used[i] = n
+            i += 1
+    
+    string = ""
+    for i in indexes_used:
+        with open("./text/%02d.txt" % i, "r") as f:
+            string += f.read()
+    offset = 0
+    bufsize = (curses.LINES - 2) * curses.COLS
+    
+    newline_comp = 0
+    j = k = 0 # buffer index and string index
+    buf = ""
+    while j < bufsize:
+        buf += string[k + offset]
+        if string[k + offset] != '\n':
+            j += 1
+        else:
+            j += curses.COLS - ((k + newline_comp) % curses.COLS)
+            newline_comp += curses.COLS - ((k + newline_comp) % curses.COLS) - 1
+        k += 1
+
+    stdscr.addstr(1, 0, buf)
+    stdscr.refresh()
     
     # Variables for tabulation
     # List of characters where an error was made
@@ -95,7 +120,7 @@ def main (stdscr):
                 if yx[1] == 0:
                     if yx[0] > 1:
                         y = yx[0] - 1
-                        x = cols - 1
+                        x = curses.COLS - 1
                     else:
                         curses.beep()
                         y = 1
