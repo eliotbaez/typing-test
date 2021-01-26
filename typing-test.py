@@ -46,7 +46,8 @@ def main (stdscr):
     
     # Variables for tabulation
     # List of characters where an error was made
-    error_list = []
+    #error_list = []
+    error_made = [False] * len(string)
     error_count = 0
     chars_typed = 0
     cancelled = False
@@ -59,6 +60,7 @@ def main (stdscr):
     timer_start = time.time() 
     stdscr.addstr(0, 0, "%-35s" % "Typing test in progress...", curses.A_REVERSE)
     stdscr.addstr(0, 41, "%-23s" % "Press ^X to cancel test", curses.A_REVERSE)
+    stdscr.move(1, 0)
 
     stdscr.nodelay(True)
     curses.ungetch(c)
@@ -83,19 +85,19 @@ def main (stdscr):
         else:
             # Character is ASCII printable or newline
             if (31 < c and c < 127) or (c == curses.KEY_ENTER or c == 10 or c == 13):
-                if i in error_list:
-                    error_list.remove(i)
+                if error_made[i]:
+                #if i in error_list:
+                    #error_list.remove(i)
+                    error_made[i] = False
                 # Character is correct
                 if chr(c) == string[i]:
                     stdscr.addstr(chr(c), curses.color_pair(1))
                 # Not correct
                 else:
                     curses.beep()
-                    if c == curses.KEY_ENTER or c == 10 or c == 13:
-                        # Reassign as space character
-                        c = 32
-                    stdscr.addstr(chr(c), curses.color_pair(2))
-                    error_list.append(i)
+                    stdscr.addstr(string[i], curses.color_pair(2))
+                    #error_list.append(i)
+                    error_made[i] = True
                     error_count += 1
                 i += 1
                 chars_typed += 1
@@ -128,16 +130,41 @@ def main (stdscr):
 
                     # Now write buffer to screen
                     stdscr.addstr(1, 0, buf, curses.color_pair(1))
+                    # Format characters accordingly
+                    #stdscr.move(1, 0)
+                    y = 1; x = 0
+                    j = 0
+                    length = len(buf)
+                    while j < length:
+                        c = string[offset + j]
+                        if error_made[offset + j]:
+#                        if offset + j in error_list:
+                            stdscr.chgat(y, x, 1, curses.color_pair(2))
+                        if c == '\n' or c == '\r':
+                            stdscr.addch('\n', curses.color_pair(1))
+                            y += 1
+                            x = 0
+                        else:
+                            # Advance cursor
+                            x += 1
+                            if x > curses.COLS - 1:
+                                y += 1
+                                x = 0
+                            stdscr.move(y, x)
+                        j += 1
+                    stdscr.chgat(curses.LINES - 2, 0, curses.color_pair(0))
+                    stdscr.chgat(curses.LINES - 3, 0, curses.color_pair(0))
+
                     stdscr.move(yx[0] - 1, yx[1])
 
                 stdscr.refresh()
 
             # Other conditions
             elif c == curses.KEY_BACKSPACE or c == curses.KEY_LEFT:
-                if i > 0:
+                yx = stdscr.getyx()
+                if i > 0 and not (yx[0] == 0 and yx[1] == 0):
                     i -= 1
 
-                yx = stdscr.getyx()
                 # Cursor is at first column
                 if yx[1] == 0:
                     if yx[0] > 1:
@@ -170,7 +197,7 @@ def main (stdscr):
     stdscr.chgat(0, 35, 5, curses.color_pair(2) | curses.A_BOLD | curses.A_BLINK)
     
     # Display statistics
-    uncorrected = len(error_list)
+    uncorrected = error_made.count(True)
     stdscr.addstr(1, 0, "%-34s" % " ", curses.color_pair(3))
     stdscr.addstr(2, 0, "%-34s" % "        TYPING STATISTICS", curses.color_pair(3))
     stdscr.addstr(3, 0, "  Gross characters typed:%7d  " % chars_typed, curses.color_pair(3))
@@ -195,6 +222,7 @@ def main (stdscr):
     stdscr.nodelay(False)
     while stdscr.getch() != ord('X') & 0x1f:
         pass
-    # done
+    return 0
 
+# Execute main function
 wrapper (main)
