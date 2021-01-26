@@ -85,10 +85,13 @@ def main (stdscr):
     while i < len(string):
         if not no_time_limit:
             # Refresh time
-            time_remaining = test_length - time.time() + timer_start + 1
+            time_remaining = test_length - time.time() + timer_start
             if time_remaining <= 0:
                 break
             yx = stdscr.getyx()
+            # Because string formatting truncates floats instead of rounding,
+            # we will increment the time by 1 to account for this.
+            time_remaining += 1
             stdscr.addstr(0, 35, "%2d:%02d" % (time_remaining // 60, time_remaining % 60), curses.A_REVERSE)
             stdscr.move(yx[0], yx[1])
             stdscr.refresh()
