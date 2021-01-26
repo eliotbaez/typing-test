@@ -3,6 +3,7 @@ import curses
 import time
 from curses import wrapper
 import random
+import sys
 
 def main (stdscr):
     stdscr.clear()
@@ -10,7 +11,18 @@ def main (stdscr):
     curses.init_pair (1, curses.COLOR_GREEN, curses.COLOR_BLACK)
     curses.init_pair (2, curses.COLOR_WHITE, curses.COLOR_RED)
     curses.init_pair (3, curses.COLOR_BLACK, curses.COLOR_WHITE)
-
+    
+    # Last argument will be interpreted as test duration in minutes
+    no_time_limit = False
+    argc = len(sys.argv)
+    if argc > 1:
+        test_length = round(60 * float(sys.argv[argc - 1]))
+        if test_length < 0:
+            # Set to true to signal that there is no time limit
+            no_time_limit = True
+    else:
+        # Default duration 5 minutes
+        test_length = 300
     
     # Initialize sample string
     # The 10 text files are indexed 00-09
@@ -29,6 +41,8 @@ def main (stdscr):
     offset = 0
     bufsize = (curses.LINES - 2) * curses.COLS
     
+    # Variable to keep track of how many spaces have been added
+    # to compensate for newline characters, initialized at 0
     newline_comp = 0
     j = k = 0 # buffer index and string index
     buf = ""
@@ -45,21 +59,23 @@ def main (stdscr):
     stdscr.refresh()
     
     # Variables for tabulation
-    # List of characters where an error was made
-    #error_list = []
+    # Keep track of which characters have uncorrected errors
     error_made = [False] * len(string)
     error_count = 0
     chars_typed = 0
     cancelled = False
-
-    stdscr.addstr(0, 0, "%-35s 5:00" % "Start typing to start the timer.")
+    
+    stdscr.addstr(0, 0, "%-35s" % "Start typing to start the timer.")
+    if not no_time_limit:
+        stdscr.addstr(0, 35, "%2d:%02d" % (test_length // 60, test_length % 60))
     stdscr.chgat(0, 0, -1, curses.A_REVERSE)
     stdscr.move(1, 0)
     stdscr.refresh()
     c = stdscr.getch()
+    # Record start time
     timer_start = time.time() 
     stdscr.addstr(0, 0, "%-35s" % "Typing test in progress...", curses.A_REVERSE)
-    stdscr.addstr(0, 41, "%-23s" % "Press ^X to cancel test", curses.A_REVERSE)
+    stdscr.addstr(0, 41, "%-23s" % "Press ^X to end test", curses.A_REVERSE)
     stdscr.move(1, 0)
 
     stdscr.nodelay(True)
@@ -67,14 +83,15 @@ def main (stdscr):
    
     i = 0
     while i < len(string):
-        # Refresh time
-        time_remaining = 300 - time.time() + timer_start
-        if time_remaining <= 0:
-            break
-        yx = stdscr.getyx()
-        stdscr.addstr(0, 35, "%2d:%02d" % (time_remaining // 60, time_remaining % 60), curses.A_REVERSE)
-        stdscr.move(yx[0], yx[1])
-        stdscr.refresh()
+        if not no_time_limit:
+            # Refresh time
+            time_remaining = test_length - time.time() + timer_start + 1
+            if time_remaining <= 0:
+                break
+            yx = stdscr.getyx()
+            stdscr.addstr(0, 35, "%2d:%02d" % (time_remaining // 60, time_remaining % 60), curses.A_REVERSE)
+            stdscr.move(yx[0], yx[1])
+            stdscr.refresh()
 
         # Interpret input
         c = stdscr.getch()
@@ -87,7 +104,6 @@ def main (stdscr):
             if (31 < c and c < 127) or (c == curses.KEY_ENTER or c == 10 or c == 13):
                 if error_made[i]:
                 #if i in error_list:
-                    #error_list.remove(i)
                     error_made[i] = False
                 # Character is correct
                 if chr(c) == string[i]:
@@ -96,7 +112,6 @@ def main (stdscr):
                 else:
                     curses.beep()
                     stdscr.addstr(string[i], curses.color_pair(2))
-                    #error_list.append(i)
                     error_made[i] = True
                     error_count += 1
                 i += 1
@@ -131,7 +146,6 @@ def main (stdscr):
                     # Now write buffer to screen
                     stdscr.addstr(1, 0, buf, curses.color_pair(1))
                     # Format characters accordingly
-                    #stdscr.move(1, 0)
                     y = 1; x = 0
                     j = 0
                     length = len(buf)
@@ -156,8 +170,7 @@ def main (stdscr):
                     stdscr.chgat(curses.LINES - 3, 0, curses.color_pair(0))
 
                     stdscr.move(yx[0] - 1, yx[1])
-
-                stdscr.refresh()
+                    stdscr.refresh()
 
             # Other conditions
             elif c == curses.KEY_BACKSPACE or c == curses.KEY_LEFT:
