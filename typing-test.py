@@ -82,7 +82,8 @@ def main (stdscr):
     curses.ungetch(c)
    
     i = 0
-    while i < len(string):
+    string_length = len(string)
+    while i < string_length:
         if not no_time_limit:
             # Refresh time
             time_remaining = test_length - time.time() + timer_start
