@@ -101,6 +101,7 @@ def main (stdscr):
         c = stdscr.getch()
         # No input ready
         if c == curses.ERR:
+            time.sleep(0.01)
             continue
         # Input ready
         else:
