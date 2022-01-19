@@ -5,12 +5,13 @@ from curses import wrapper
 import random
 import sys
 
-def main (stdscr):
+
+def main(stdscr):
     stdscr.clear()
 
-    curses.init_pair (1, curses.COLOR_GREEN, curses.COLOR_BLACK)
-    curses.init_pair (2, curses.COLOR_WHITE, curses.COLOR_RED)
-    curses.init_pair (3, curses.COLOR_BLACK, curses.COLOR_WHITE)
+    curses.init_pair(1, curses.COLOR_GREEN, curses.COLOR_BLACK)
+    curses.init_pair(2, curses.COLOR_WHITE, curses.COLOR_RED)
+    curses.init_pair(3, curses.COLOR_BLACK, curses.COLOR_WHITE)
     
     # Last argument will be interpreted as test duration in minutes
     no_time_limit = False
@@ -44,7 +45,7 @@ def main (stdscr):
     # Variable to keep track of how many spaces have been added
     # to compensate for newline characters, initialized at 0
     newline_comp = 0
-    j = k = 0 # buffer index and string index
+    j = k = 0  # buffer index and string index
     buf = ""
     while j < bufsize:
         buf += string[k + offset]
@@ -106,9 +107,8 @@ def main (stdscr):
         # Input ready
         else:
             # Character is ASCII printable or newline
-            if (31 < c and c < 127) or (c == curses.KEY_ENTER or c == 10 or c == 13):
+            if (31 < c < 127) or (c == curses.KEY_ENTER or c == 10 or c == 13):
                 if error_made[i]:
-                #if i in error_list:
                     error_made[i] = False
                 # Character is correct
                 if chr(c) == string[i]:
@@ -125,7 +125,7 @@ def main (stdscr):
                 
                 # Scroll if at bottom of screen
                 yx = stdscr.getyx()
-                if (yx[0] > curses.LINES - 3):
+                if yx[0] > curses.LINES - 3:
                     # Redraw screen
                     # First shift buffer by 1 line
                     j = 0
@@ -137,7 +137,7 @@ def main (stdscr):
                     offset += j + 1
 
                     # Then calculate buffer with new offset
-                    j = k = 0 # buffer index and string index
+                    j = k = 0  # buffer index and string index
                     buf = ""
                     while j < bufsize:
                         buf += string[k + offset]
@@ -157,7 +157,6 @@ def main (stdscr):
                     while j < length:
                         c = string[offset + j]
                         if error_made[offset + j]:
-#                        if offset + j in error_list:
                             stdscr.chgat(y, x, 1, curses.color_pair(2))
                         if c == '\n' or c == '\r':
                             stdscr.addch('\n', curses.color_pair(1))
@@ -236,11 +235,12 @@ def main (stdscr):
     curses.curs_set(False)
     stdscr.refresh()
 
-
     stdscr.nodelay(False)
     while stdscr.getch() != ord('X') & 0x1f:
         pass
     return 0
 
+
 # Execute main function
-wrapper (main)
+if __name__ == "__main__":
+    wrapper(main)
