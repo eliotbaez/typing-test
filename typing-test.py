@@ -177,7 +177,7 @@ def main(stdscr):
                     stdscr.refresh()
 
             # Other conditions
-            elif c == curses.KEY_BACKSPACE or c == curses.KEY_LEFT or c == 8:
+            elif c == curses.KEY_BACKSPACE or c == curses.KEY_LEFT or c == 8 or c == 127:
                 yx = stdscr.getyx()
                 if i > 0 and not (yx[0] == 0 and yx[1] == 0):
                     i -= 1
